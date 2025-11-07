@@ -26,6 +26,7 @@ const Index: FC = () => {
         }
     };
     useEffect(() => {
+        localStorage.clear()
         if (isShowCheckMark) {
             const redirectTimeOut = setTimeout(() => {
                 const currentTime = Date.now();
