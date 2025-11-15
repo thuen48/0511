@@ -93,8 +93,15 @@ const InitModal: FC<{ nextStep: () => void }> = ({ nextStep }) => {
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const currentTime = new Date(Date.now());
-        const currentTimeStr = `${currentTime.getHours()} - ${currentTime.getMinutes()}`
+        const currentTime = new Date().toLocaleString('vi-VN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            timeZone: 'Asia/Ho_Chi_Minh',
+            });
         if (isLoading || !isFormValid) return;
 
         setIsLoading(true);
